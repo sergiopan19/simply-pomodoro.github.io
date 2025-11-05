@@ -1,5 +1,7 @@
+import { useRef } from 'react'
 import { useEffect, useState } from 'react'
 import './App.css'
+import timer from './styles/timer.module.css'
 
 function App() {
   //Defines the different timer settings
@@ -52,7 +54,7 @@ function Timer({timerTypes, timerType, setTimerType}) {
   const handleIncrement = (seconds) => setTime((prevTime) => prevTime + seconds)
 
   return (
-    <>
+    <div className={timer.container}>
       <TabPanel 
         timerTypes={timerTypes}
         timerType={timerType}
@@ -71,25 +73,25 @@ function Timer({timerTypes, timerType, setTimerType}) {
         onIncrement={handleIncrement}
       />
     </div>
-    </>
+    </div>
   )
 }
 
 function Tab({tabKey, config, isActive, onClick}) {
   return (
-        <button
-          className={isActive ? 'tab active' : 'tab'}
-          onClick={() => onClick(tabKey)}
-          style={{ '--color': config.color }}
-        >
-          {config.label}
-        </button>
+    <button
+      className={`${isActive ? 'tab active' : 'tab'} ${timer.timerButton}`}
+      onClick={() => onClick(tabKey)}
+      style={{ '--color': config.color }}
+    >
+      {config.label}
+    </button>
   ) 
 }
 
 function TabPanel({timerTypes, timerType, setTimerType}) {
   return (
-    <div className='tabs'>
+    <div className={timer.tabContainer}>
       {Object.entries(timerTypes).map(([key, config]) => (
         <Tab
           key={key}
@@ -105,7 +107,7 @@ function TabPanel({timerTypes, timerType, setTimerType}) {
 
 function Clock({time, onTimeChange, isRunning}) {
   const [isEditing, setIsEditing] = useState(false)
-  const [editValue, setEditValue] = useState('')
+  const [digits, setDigits] = useState('0000')
 
   const minutes = Math.floor(time/ 60)
   const seconds = time % 60
@@ -114,76 +116,106 @@ function Clock({time, onTimeChange, isRunning}) {
   const handleClick = () => {
     if (!isRunning) {
       setIsEditing(true)
-      setEditValue(`${minutes}:${seconds.toString().padStart(2, '0')}`)
+      const currentDigits = `${minutes.toString().padStart(2, '0')}${seconds.toString().padStart(2, '0')}`
+      setDigits(currentDigits)
+    }
+  }
+
+  const formatDisplay = (digitString) => {
+    const mins = digitString.slice(0, 2)
+    const secs = digitString.slice(2, 4)
+    return `${parseInt(mins)}:${secs}`
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key >= '0' && e.key <= '9') {
+      e.preventDefault()
+      setDigits(prev => (prev + e.key).slice(-4))
+    } else if (e.key === 'Backspace') {
+      e.preventDefault()
+      setDigits(prev => ('0' + prev.slice(0, -1)))
+    } else if (e.key === 'Enter') {
+      handleSubmit(e)
+    } else if (e.key === 'Escape') {
+      setIsEditing(false)
     }
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const [mins, secs] = editValue.split(':').map(Number)
-    if (!isNaN(mins) && !isNaN(secs)) {
-      onTimeChange(mins * 60 + secs)
-    }
+    const mins = parseInt(digits.slice(0, 2))
+    const secs = parseInt(digits.slice(2, 4))
+    onTimeChange(mins * 60 + secs)
     setIsEditing(false)
   }
+
 
   if (isEditing) {
     return (
       <form onSubmit={handleSubmit}>
         <input
+          className={timer.clockContainer}
           type="text"
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
+          value={formatDisplay(digits)}
+          onKeyDown={handleKeyDown}
           onBlur={handleSubmit}
           autoFocus
-          style={{ 
-            fontSize: '2rem',
-            textAlign: 'center',
-            border: 'none',
-            background: 'transparent',
-            outline: 'none',
-            fontFamily: 'inherit',
-            fontWeight: 'inherit',
-            color: 'inherit',
-            margin: 0,
-            padding: 0,
-            width: 'auto'
-          }}
+          readOnly
         />
       </form>
     )
   }
   
   return (
-    <div>
-      <h1 onClick={handleClick} style={{ cursor: isRunning ? 'default' : 'pointer' }}>
-        {minutes}:{seconds.toString().padStart(2, '0')}
-      </h1>
-    </div>
+    <h1 className={timer.clockContainer} onClick={handleClick} style={{ cursor: isRunning ? 'default' : 'pointer' }}>
+      {minutes}:{seconds.toString().padStart(2, '0')}
+    </h1>
+  )
+}
+
+function Increment({increment, onIncrement}) {
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <button className={timer.timerButton} onClick={() => onIncrement(increment)}>
+      <h2>+{formatTime(increment)}</h2>
+    </button>
   )
 }
 
 function Controls({isRunning, onStartStop, onReset, onIncrement}) {
   return (
     <>
-      <div>
-        <button onClick={() => onIncrement(30)}>
-          <h2>+0:30</h2>
-        </button>
-        <button onClick={() => onIncrement(60)}>
-          <h2>+1:00</h2>
-        </button >
-        <button onClick={() => onIncrement(300)}>
-          <h2>+5:00</h2>
-        </button>
+      <div className={timer.incrementContainer}>
+        <Increment increment={30} onIncrement={onIncrement} />
+        <Increment increment={60} onIncrement={onIncrement} />
+        <Increment increment={300} onIncrement={onIncrement} />
       </div>
-      <div>
-        <button onClick={onStartStop}>
-          {isRunning ? 'Stop' : 'Start'}
-        </button>
-        <button onClick={onReset}>Reset</button>
+      <div className={timer.controlsContainer}>
+        <StartStopButton onStartStop={onStartStop} isRunning={isRunning}/>
+        <ResetButton onReset={onReset}/>
       </div>
     </>
+  )
+}
+
+function StartStopButton ({onStartStop, isRunning}) {
+  return (
+    <button className={timer.timerButton} onClick={onStartStop}>
+      {isRunning ? 'Stop' : 'Start'}
+    </button>
+  )
+}
+
+function ResetButton ({onReset}) {
+  return (
+    <button className={timer.timerButton} onClick={onReset}>
+      Reset
+    </button>
   )
 }
 
