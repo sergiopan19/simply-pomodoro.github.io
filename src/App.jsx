@@ -1,14 +1,13 @@
-import { useRef } from 'react'
 import { useEffect, useState } from 'react'
-import './App.css'
+import './styles/App.css'
 import timer from './styles/timer.module.css'
 
 function App() {
   //Defines the different timer settings
   const timerTypes = {
-    pomodoro: {time: 25, color: "green", label: "Pomodoro"},
-    shortBreak: {time: 5, color: "orange", label: "Short Break"},
-    longBreak: {time: 15, color: "red", label: "Long Break"}
+    pomodoro: {time: 25, color: '#B0C5A4', buttonColor: '#9AAF8E', label: "Pomodoro"},
+    shortBreak: {time: 5, color: '#f1b85dff', buttonColor: '#ec9100ff', label: "Short Break"},
+    longBreak: {time: 15, color: '#ca5f5fff', buttonColor: '#aa1818ff', label: "Long Break"}
   }
 
   const [timerType, setTimerType] = useState('pomodoro')
@@ -54,42 +53,61 @@ function Timer({timerTypes, timerType, setTimerType}) {
   const handleIncrement = (seconds) => setTime((prevTime) => prevTime + seconds)
 
   return (
-    <div className={timer.container}>
+    <div className={timer.container} style={{'--color': timerTypes[timerType].color}}>
       <TabPanel 
         timerTypes={timerTypes}
         timerType={timerType}
         setTimerType={setTimerType}
+        buttonColor={timerTypes[timerType].buttonColor}
       />
       <Clock 
         time={time}
         onTimeChange={setTime}
         isRunning={isRunning}
       />
-    <div>
-      <Controls
-        isRunning={isRunning}
-        onStartStop={handleStartStop}
+      <IncrementPanel 
+        onIncrement={handleIncrement} 
+        buttonColor={timerTypes[timerType].buttonColor} 
+      />  
+      <ControlPanel 
+        isRunning={isRunning} 
+        onStartStop={handleStartStop} 
         onReset={handleReset}
-        onIncrement={handleIncrement}
+        buttonColor={timerTypes[timerType].buttonColor} 
       />
-    </div>
     </div>
   )
 }
 
-function Tab({tabKey, config, isActive, onClick}) {
+//Base class for buttons on timer
+function Button({ children, onClick, color, className}) {
   return (
     <button
-      className={`${isActive ? 'tab active' : 'tab'} ${timer.timerButton}`}
-      onClick={() => onClick(tabKey)}
-      style={{ '--color': config.color }}
+      className={`${timer.timerButton} ${className}`}
+      onClick={onClick}
+      style={{ '--color': color}}
     >
-      {config.label}
+    {children}
     </button>
-  ) 
+  )
+
 }
 
-function TabPanel({timerTypes, timerType, setTimerType}) {
+//Extends Tab class. Handles preset timer settings
+function Tab({ tabKey, config, isActive, onClick, buttonColor}) {
+  return (
+    <Button
+      onClick={() => onClick(tabKey)}
+      color={buttonColor}
+      className={isActive ? 'tab active' : 'tab'}
+    >
+      {config.label}
+    </Button>
+  )
+}
+
+//Tab container
+function TabPanel({timerTypes, timerType, setTimerType, buttonColor}) {
   return (
     <div className={timer.tabContainer}>
       {Object.entries(timerTypes).map(([key, config]) => (
@@ -99,12 +117,14 @@ function TabPanel({timerTypes, timerType, setTimerType}) {
           config={config}
           isActive={timerType === key}
           onClick={setTimerType}
+          buttonColor={buttonColor}
         />
       ))}
     </div>
   )
 }
 
+//Handles time editing and time display
 function Clock({time, onTimeChange, isRunning}) {
   const [isEditing, setIsEditing] = useState(false)
   const [digits, setDigits] = useState('0000')
@@ -173,7 +193,8 @@ function Clock({time, onTimeChange, isRunning}) {
   )
 }
 
-function Increment({increment, onIncrement}) {
+//Extends Button class. Increment time 
+function Increment({increment, onIncrement, color}) {
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -181,41 +202,63 @@ function Increment({increment, onIncrement}) {
   }
 
   return (
-    <button className={timer.timerButton} onClick={() => onIncrement(increment)}>
+    <Button onClick={() => onIncrement(increment)} color={color}>
       <h2>+{formatTime(increment)}</h2>
-    </button>
+    </Button>
   )
 }
 
-function Controls({isRunning, onStartStop, onReset, onIncrement}) {
+//Increment button container
+function IncrementPanel({onIncrement, buttonColor}) {
+  const increments = [
+    { value: 30, label: '+0:30' },
+    { value: 60, label: '+1:00' },
+    { value: 300, label: '+5:00' }
+  ]
+
   return (
-    <>
-      <div className={timer.incrementContainer}>
-        <Increment increment={30} onIncrement={onIncrement} />
-        <Increment increment={60} onIncrement={onIncrement} />
-        <Increment increment={300} onIncrement={onIncrement} />
-      </div>
-      <div className={timer.controlsContainer}>
-        <StartStopButton onStartStop={onStartStop} isRunning={isRunning}/>
-        <ResetButton onReset={onReset}/>
-      </div>
-    </>
+    <div className={timer.incrementContainer}>
+      {increments.map((increment) => (
+        <Increment
+          key={increment.value}
+          increment={increment.value}
+          onIncrement={onIncrement}
+          color={buttonColor}
+        />
+      ))}
+    </div>
   )
 }
 
-function StartStopButton ({onStartStop, isRunning}) {
-  return (
-    <button className={timer.timerButton} onClick={onStartStop}>
-      {isRunning ? 'Stop' : 'Start'}
-    </button>
-  )
-}
+//Pause, play, reset control container
+function ControlPanel ({isRunning, onStartStop, onReset, buttonColor}) {
+   const controls = [
+    { 
+      type: 'startStop', 
+      onClick: onStartStop, 
+      icon: isRunning ? 'src/assets/pause.svg' : 'src/assets/play.svg',
+      alt: isRunning ? 'Pause' : 'Play'
+    },
+    { 
+      type: 'reset', 
+      onClick: onReset, 
+      icon: 'src/assets/reset.svg',
+      alt: 'Reset'
+    }
+  ]
 
-function ResetButton ({onReset}) {
   return (
-    <button className={timer.timerButton} onClick={onReset}>
-      Reset
-    </button>
+    <div className={timer.controlsContainer}>
+      {controls.map((control) => (
+          <Button
+            key={control.type}
+            onClick={control.onClick}
+            color={buttonColor}
+          >
+            <img src={control.icon} alt={control.alt} />
+          </Button>
+        ))}
+    </div>
   )
 }
 

@@ -6,24 +6,22 @@
     max-width: 100vw;
     margin: 0 auto;
     column-gap: 20px;
-    background-color: rgb(66, 65, 65);
+    background-color: var(--color);
     border-radius: 50px;
 }
 
 .tabContainer {
     display: flex;
     gap: 30px;
-}
-
-.clock {
-    font-size: 2rem;
+    margin-top: 30px;
+    margin-bottom: none;
 }
 
 .clockContainer {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 3rem;
+    font-size: 86px;
     text-align: center;
     border: none;
     background: transparent;
@@ -31,9 +29,9 @@
     font-family: inherit;
     font-weight: bold;
     color: inherit;
-    margin: 30px auto;
+    margin: 10px auto;
     padding: 0;
-    width: 200px;
+    width: 250px;
     height: 1.5em;
 }
 
@@ -60,9 +58,9 @@
 
 .incrementContainer {
     display: flex;
-    gap: 50px;
-    height: 60px;
-    margin: 10px auto;
+    gap: 55px;
+    height: 40px;
+    margin: none auto;
     width: auto;
 }
 
@@ -70,7 +68,8 @@
     display: flex;
     align-items: center;
     border-radius: 25px;
-
+    font-weight: bold;
+    background-color: var(--color)
 }
 
 .controlsContainer {
