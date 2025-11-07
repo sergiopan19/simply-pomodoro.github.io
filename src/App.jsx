@@ -5,7 +5,7 @@ import timer from './styles/timer.module.css'
 function App() {
   //Defines the different timer settings
   const timerTypes = {
-    pomodoro: {time: 25, color: '#B0C5A4', buttonColor: '#9AAF8E', label: "Pomodoro"},
+    pomodoro: {time: 25, color: '#B0C5A4', buttonColor: '#79ab5bff', label: "Pomodoro"},
     shortBreak: {time: 5, color: '#f1b85dff', buttonColor: '#ec9100ff', label: "Short Break"},
     longBreak: {time: 15, color: '#ca5f5fff', buttonColor: '#aa1818ff', label: "Long Break"}
   }
@@ -26,6 +26,7 @@ function App() {
 function Timer({timerTypes, timerType, setTimerType}) {
   const [time, setTime] = useState(timerTypes[timerType].time * 60)
   const [isRunning, setIsRunning] = useState(false)
+  const [alarmAudio, setAlarmAudio] = useState(null)
 
   //Reset timer when timer type changes
   useEffect(() => {
@@ -35,7 +36,12 @@ function Timer({timerTypes, timerType, setTimerType}) {
 
   //Countdown logic
   useEffect(() => {
-    if(!isRunning || time <= 0) return
+    if(!isRunning || time <= 0) {
+      if (time === 0 && isRunning) {
+        playAlarm()
+      }  
+    return
+    }
 
     const interval = setInterval(() => {
       setTime((prevTimeLeft) => prevTimeLeft - 1)
@@ -45,12 +51,37 @@ function Timer({timerTypes, timerType, setTimerType}) {
   }, [isRunning, time])
 
   //Handles basic timer controls
-  const handleStartStop = () => setIsRunning(!isRunning)
+  const handleStartStop = () => {
+    stopAlarm()
+    setTime((prevTime) => {
+      if (prevTime === 0) {
+        return timerTypes[timerType].time * 60
+      }
+      return prevTime
+    })
+    setIsRunning(!isRunning)
+  }
   const handleReset = () => {
+    stopAlarm()
     setTime(timerTypes[timerType].time * 60)
     setIsRunning(false)
   }
   const handleIncrement = (seconds) => setTime((prevTime) => prevTime + seconds)
+
+  const playAlarm = () => {
+    const audio = new Audio('src/assets/alarm-clock.mp3')
+    audio.loop = true
+    audio.play().catch((error) => console.log('Audio failed to play: ', error))
+    setAlarmAudio(audio)
+  }
+
+  const stopAlarm = () => {
+    if (alarmAudio) {
+      alarmAudio.pause()
+      alarmAudio.currentTime = 0
+      setAlarmAudio(null)
+    }
+  }
 
   return (
     <div className={timer.container} style={{'--color': timerTypes[timerType].color}}>
@@ -168,7 +199,6 @@ function Clock({time, onTimeChange, isRunning}) {
     onTimeChange(mins * 60 + secs)
     setIsEditing(false)
   }
-
 
   if (isEditing) {
     return (
