@@ -239,10 +239,12 @@ function Clock({time, onTimeChange, isRunning, onStartStop}) {
           ref={inputRef}
           className={timer.clockContainer}
           type="text"
+          inputMode='numeric'
+          pattern="[0-9]*"
           value={formatDisplay(digits)}
           onKeyDown={handleKeyDown}
           onMouseDown={(e) => e.preventDefault()} // Prevent mouse selection
-          onSelect={(e) => e.preventDefault()} // Prevent text selection
+          onSelect={(e) => e.preventDefault()}    // Prevent text selection
           onBlur={handleSubmit}
           autoFocus
           readOnly
